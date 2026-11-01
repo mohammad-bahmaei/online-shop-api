@@ -4,20 +4,44 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Product
 from rest_framework import status
+from django.core.cache import cache
 
 class ProductAPIView(APIView):
     
     def get(self, request, slug):
 
         product = get_object_or_404(Product, slug=slug)
-        serializers = ProductSerializers(product)
-        return Response(serializers.data, status=status.HTTP_200_OK)
+        serializer = ProductSerializers(product)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, slug):
+        
+        product = get_object_or_404(Product, slug=slug)
+        serializer = ProductSerializers(product, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            cache.delete("product_list")
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ProductListAPIView(APIView):
 
     def get(self, request):
+        products = cache.get("product_list")
 
-        products = Product.objects.all()
-        serializer = ProductSerializers(products, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if products is None:
+            print("CACHE MISS")
 
+            products = Product.objects.all()
+            serializer = ProductSerializers(products, many=True)
+            products = serializer.data
+            cache.set("product_list", products, 300)
+
+        else:
+            print("CACHE HIT")
+
+        return Response(products, status=status.HTTP_200_OK)

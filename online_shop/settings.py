@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'users',
     'payments',
     'rest_framework',
+    'signals',
 ]
 
 MIDDLEWARE = [
@@ -139,11 +140,14 @@ MAILERS = {
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+        "TIMEOUT": 300,
     }
 }
-
 AUTH_USER_MODEL = "users.user"
 
 MEDIA_URL = "/media/"
