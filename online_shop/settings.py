@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     'users',
     'payments',
     'rest_framework',
-    'signals',
 ]
 
 MIDDLEWARE = [

@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 
 
 class Category(models.Model):
@@ -40,6 +41,14 @@ class ProductImage(models.Model):
         verbose_name = "عکس محصول"
         verbose_name_plural = "عکس‌های محصولات"
         ordering = ["sort_order", "id"]
+        
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product"],
+                condition=Q(is_primary=True),
+                name="unique_primary_image_per_product"
+            )
+        ]
 
     def __str__(self):
         return f"{self.product.name} - تصویر {self.pk}"

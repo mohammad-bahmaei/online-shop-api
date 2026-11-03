@@ -14,19 +14,6 @@ class ProductAPIView(APIView):
         serializer = ProductSerializers(product)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def patch(self, request, slug):
-        
-        product = get_object_or_404(Product, slug=slug)
-        serializer = ProductSerializers(product, data=request.data, partial=True)
-        
-        if serializer.is_valid():
-            serializer.save()
-            cache.delete("product_list")
-            
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class ProductListAPIView(APIView):
 
