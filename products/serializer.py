@@ -10,7 +10,6 @@ class ProductImageSerializers(serializers.ModelSerializer):
             "id",
             "image",
             "is_primary",
-            "sort_order",
         ]
 
 

@@ -35,12 +35,11 @@ class ProductImage(models.Model):
     image = models.ImageField(upload_to="products/", verbose_name="تصویر محصول")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images", verbose_name="محصول")
     is_primary = models.BooleanField(default=False, verbose_name="تصویر اصلی")
-    sort_order = models.PositiveSmallIntegerField(default=0, verbose_name="ترتیب نمایش تصاویر")
 
     class Meta:
         verbose_name = "عکس محصول"
         verbose_name_plural = "عکس‌های محصولات"
-        ordering = ["sort_order", "id"]
+        ordering = ["-is_primary", "id"]
         
         constraints = [
             models.UniqueConstraint(
@@ -49,6 +48,14 @@ class ProductImage(models.Model):
                 name="unique_primary_image_per_product"
             )
         ]
+
+    def save(self, *args, **kwargs):
+        if self.is_primary:
+            ProductImage.objects.filter(
+                product_id=self.product_id,
+                is_primary=True 
+            ).exclude(pk=self.pk).update(is_primary=False)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.product.name} - تصویر {self.pk}"
