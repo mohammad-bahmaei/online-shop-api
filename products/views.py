@@ -8,6 +8,8 @@ from rest_framework import status
 from django.core.cache import cache
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter
+from rest_framework.pagination import PageNumberPagination
 
 class ProductAPIView(APIView):
     
@@ -18,32 +20,30 @@ class ProductAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# class ProductListAPIView(ListAPIView):
+class ProductPagination(PageNumberPagination):
 
-#     filter_backends = [SearchFilter]
-#     search_fields = ["name", "description"]
+    page_size = 5
 
-#     def get(self, request):
-#         products = cache.get("product_list")
-
-#         if products is None:
-#             print("CACHE MISS")
-
-#             products = Product.objects.prefetch_related("images")
-#             serializer = ProductSerializers(products, many=True)
-#             products = serializer.data
-#             cache.set("product_list", products, 300)
-
-#         else:
-#             print("CACHE HIT")
-
-#         return Response(products, status=status.HTTP_200_OK)
 
 class ProductListAPIView(ListAPIView):
-    queryset = Product.objects.prefetch_related("images")
+    queryset = Product.objects.prefetch_related("images").order_by("-created_at", "-id")
     serializer_class = ProductSerializers
-    filter_backends = [SearchFilter, DjangoFilterBackend]
+    filter_backends = [SearchFilter, DjangoFilterBackend, OrderingFilter]
     search_fields = ["name", "description"]
     filterset_fields = ["category"]
+    ordering_fields = ["price", "created_at"]
+    pagination_class = ProductPagination
 
- 
+    def list(self, request, *args, **kwargs):
+        if request.query_params:
+            return super().list(request, *args, **kwargs)
+        
+        cached_data = cache.get("product_list")
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set("product_list", response.data, 300)
+
+        return response
+
