@@ -1,27 +1,34 @@
-from django.shortcuts import get_object_or_404
 from .serializer import ProductSerializers
-from rest_framework.views import APIView 
-from rest_framework.generics import  ListAPIView
+from rest_framework.generics import  ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from .models import Product
-from rest_framework import status
 from django.core.cache import cache
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from rest_framework.pagination import PageNumberPagination
 
-class ProductAPIView(APIView):
+class ProductAPIView(RetrieveAPIView):
     
-    def get(self, request, slug):
+        queryset = Product.objects.prefetch_related("images")
+        serializer_class = ProductSerializers
+        lookup_field = "slug"
 
-        product = get_object_or_404(Product, slug=slug)
-        serializer = ProductSerializers(product)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
+        def retrieve(self, request, *args, **kwargs):
+             cache_key = f"product_{self.kwargs['slug']}"
+             cache_data = cache.get(cache_key)
+             
+             if cache_data is not None:
+                  print("CACHE HIT ")
+                  return Response(cache_data)
+             
+             print("CACHE MISS")
+             response = super().retrieve(request, *args, **kwargs)
+             cache.set(cache_key, response.data, 300)
+             
+             return response
+        
 class ProductPagination(PageNumberPagination):
-
     page_size = 5
 
 
@@ -40,10 +47,11 @@ class ProductListAPIView(ListAPIView):
         
         cached_data = cache.get("product_list")
         if cached_data is not None:
+            print("CACHE HIT")
             return Response(cached_data)
-
+        
+        print("CACHE MISS")
         response = super().list(request, *args, **kwargs)
         cache.set("product_list", response.data, 300)
-
         return response
 
