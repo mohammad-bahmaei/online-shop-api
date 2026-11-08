@@ -23,7 +23,7 @@ class LoginSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
-        data = ["message"] = "ورود با موفقیت انجام شده است"
+        data["message"] = "ورود با موفقیت انجام شده است"
         data["user"] = {
             "id": self.user.id,
             "username": self.user.username,
