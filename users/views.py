@@ -14,6 +14,3 @@ class LoginAPIView(TokenObtainPairView):
     serializer_class = LoginSerializer
 
     
-    
-
-
