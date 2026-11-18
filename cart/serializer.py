@@ -18,3 +18,8 @@ class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
         fields = ["id", "created_at", "updated_at", "items"]
+
+class AddToCartSerializer(serializers.Serializer):
+    
+    product_id = serializers.IntegerField()
+    quantity = serializers.IntegerField(min_value=1, default=1)
